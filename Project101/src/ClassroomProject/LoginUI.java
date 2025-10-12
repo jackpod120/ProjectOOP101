@@ -192,10 +192,16 @@ public class LoginUI extends JFrame {
 
             Teacher t = authSystem.signIn(gmail, password);
             if (t != null) {
-                JOptionPane.showMessageDialog(this, "✅ Sign In successed! Greeting, " + t.getName(), "Sign In", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "❌ Sign In failed: Gmail or Password is invalid", "Sign In", JOptionPane.ERROR_MESSAGE);
-            }
+    JOptionPane.showMessageDialog(this,
+        "✅ Sign In successed! Greeting, " + t.getName(),
+        "Sign In", JOptionPane.INFORMATION_MESSAGE);
+
+    // สร้างระบบจองใหม่ แล้วเปิดหน้า ReservationUI
+    ReservationSystem rs = new ReservationSystem();
+    new ReservationUI(t, rs).setVisible(true);
+    this.dispose();
+}
+
         });
 
         return root;

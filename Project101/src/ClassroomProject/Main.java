@@ -9,6 +9,8 @@ public class Main {
     public static void main(String[] args) {
         AuthSystem auth = new AuthSystem();
         ReservationSystem reservationSys = new ReservationSystem();
+        // ✅ เรียก LoginUI แสดงตอนเริ่มโปรแกรม
+        LoginUI.show(auth);
 
         // --- 1. ส่วนของ Sign Up ---
         System.out.println("--- ระบบลงทะเบียน ---");
