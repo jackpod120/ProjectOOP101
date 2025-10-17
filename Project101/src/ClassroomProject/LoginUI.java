@@ -127,27 +127,48 @@ public class LoginUI extends JFrame {
         footer.add(createLink("Sign in", "signin"));
         root.add(footer);
 
+        // ✅ ปุ่ม Sign Up
         signUpButton.addActionListener(e -> {
             String name = nameField.getText().trim();
             String gmail = gmailField.getText().trim();
             String id = idField.getText().trim();
             String password = new String(passwordField.getPassword());
 
+            // 🔸 ตรวจว่ากรอกครบหรือยัง
             if (name.isEmpty() || gmail.isEmpty() || id.isEmpty() || password.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please enter all information", "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
+            // 🔸 ตรวจรูปแบบอีเมล (ต้องมี @ และ .)
+            if (!gmail.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                JOptionPane.showMessageDialog(this, "Please enter a valid email address", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             boolean ok = authSystem.signUp(name, gmail, id, password);
             if (ok) {
-                JOptionPane.showMessageDialog(this, "✅ Sign Up successed! Congratulation, " + name, "Sign Up", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "✅ Sign Up successful! Welcome, " + name ,
+                        "Sign Up", JOptionPane.INFORMATION_MESSAGE);
+
+                // 🔸 หลังสมัครสำเร็จ ให้เปลี่ยนไปหน้า Sign In ทันที
+                cardLayout.show(cardPanel, "signin");
+
+                // (ทางเลือก: ล้างช่องกรอกให้หมดก่อนเปลี่ยนหน้า)
+                nameField.setText("");
+                gmailField.setText("");
+                idField.setText("");
+                passwordField.setText("");
             } else {
-                JOptionPane.showMessageDialog(this, "❌ Sign Up Failed: Gmail account has already sign up", "Sign Up", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "❌ Sign Up Failed: Gmail already registered",
+                        "Sign Up", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         return root;
     }
+
 
     private JPanel createSignInPanel() {
         JPanel root = new JPanel();

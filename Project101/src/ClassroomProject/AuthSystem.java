@@ -18,13 +18,25 @@ public class AuthSystem {
             return false;
         }
 
+        for (Teacher t : teachers.values()) {
+            if (t.getID().equals(id)) {
+                System.out.println("❌ Sign Up ล้มเหลว: รหัสอาจารย์ " + id + " มีอยู่ในระบบแล้ว");
+                return false;
+            }
+        }
+
         Teacher newTeacher = new Teacher(name, gmail, id, password);
         teachers.put(gmail, newTeacher);
-        saveTeacher(newTeacher); // 🔹 บันทึกลง teachers.csv
-        createTeacherReservationFile(id); // 🔹 สร้างไฟล์ของอาจารย์
+        saveTeacher(newTeacher);
+
+        // ✅ สร้างไฟล์จองของอาจารย์ใหม่
+        createTeacherReservationFile(id);
+
         System.out.println("✅ Sign Up สำเร็จ! ยินดีต้อนรับ, " + name);
         return true;
     }
+
+
 
     public Teacher signIn(String gmail, String password) {
         Teacher teacher = teachers.get(gmail);
