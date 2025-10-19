@@ -1,6 +1,11 @@
 package ClassroomProject;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,12 +23,25 @@ public class AuthSystem {
             return false;
         }
 
+        for (Teacher t : teachers.values()) {
+            if (t.getID().equals(id)) {
+                System.out.println("❌ Sign Up ล้มเหลว: รหัสอาจารย์ " + id + " มีอยู่ในระบบแล้ว");
+                return false;
+            }
+        }
+
         Teacher newTeacher = new Teacher(name, gmail, id, password);
         teachers.put(gmail, newTeacher);
-        saveTeacher(newTeacher); // 🔹 บันทึกลงไฟล์
+        saveTeacher(newTeacher);
+
+        // ✅ สร้างไฟล์จองของอาจารย์ใหม่
+        createTeacherReservationFile(id);
+
         System.out.println("✅ Sign Up สำเร็จ! ยินดีต้อนรับ, " + name);
         return true;
     }
+
+
 
     public Teacher signIn(String gmail, String password) {
         Teacher teacher = teachers.get(gmail);
@@ -65,11 +83,27 @@ public class AuthSystem {
     private void saveTeacher(Teacher teacher) {
         try (FileWriter fw = new FileWriter(FILE_PATH, true)) {
             fw.write(teacher.getName() + "," +
-                     teacher.getGmail() + "," +
-                     teacher.getID() + "," +
-                     teacher.getPassword() + "\n");
+                    teacher.getGmail() + "," +
+                    teacher.getID() + "," +
+                    teacher.getPassword() + "\n");
         } catch (IOException e) {
             System.err.println("❌ ไม่สามารถบันทึกข้อมูลได้: " + e.getMessage());
         }
     }
+
+    // 🔹 สร้างไฟล์ CSV สำหรับอาจารย์แต่ละคน เช่น data/T001.csv
+    private void createTeacherReservationFile(String teacherID) {
+        File file = new File("data/" + teacherID + ".csv");
+        if (!file.exists()) {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
+                bw.write("ReservationID,Room,Day,StartTime,EndTime,Type,Month,Year");
+                bw.newLine();
+                System.out.println("📁 สร้างไฟล์จองสำหรับ " + teacherID + " แล้ว");
+            } catch (IOException e) {
+                System.err.println("❌ ไม่สามารถสร้างไฟล์ของ " + teacherID + ": " + e.getMessage());
+            }
+        }
+    }
 }
+
+  

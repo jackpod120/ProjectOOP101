@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -24,10 +25,10 @@ import javax.swing.border.EmptyBorder;
 public class LoginUI extends JFrame {
     private final AuthSystem authSystem;
     private final CardLayout cardLayout;
-    private final ReservationSystem reservationSystem;
     private final JPanel cardPanel;
+    private final ReservationSystem reservationSystem ;
 
-    public LoginUI(AuthSystem authSystem, ReservationSystem reservationSystem) {
+    public LoginUI(AuthSystem authSystem,ReservationSystem reservationSystem) {
         super("Classroom Reservation - Auth");
         this.authSystem = authSystem;
         this.reservationSystem = reservationSystem;
@@ -129,33 +130,52 @@ public class LoginUI extends JFrame {
         footer.add(createLink("Sign in", "signin"));
         root.add(footer);
 
+        // ✅ ปุ่ม Sign Up
         signUpButton.addActionListener(e -> {
             String name = nameField.getText().trim();
             String gmail = gmailField.getText().trim();
             String id = idField.getText().trim();
             String password = new String(passwordField.getPassword());
 
+            // 🔸 ตรวจว่ากรอกครบหรือยัง
             if (name.isEmpty() || gmail.isEmpty() || id.isEmpty() || password.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please enter all information", "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
+            // 🔸 ตรวจรูปแบบอีเมล (ต้องมี @ และ .)
+            if (!gmail.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                JOptionPane.showMessageDialog(this, "Please enter a valid email address", "Validation", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             boolean ok = authSystem.signUp(name, gmail, id, password);
             if (ok) {
-                JOptionPane.showMessageDialog(this, "✅ Sign Up successed! Congratulation, " + name, "Sign Up", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "✅ Sign Up successful! Welcome, " + name ,
+                        "Sign Up", JOptionPane.INFORMATION_MESSAGE);
+
+                // 🔸 หลังสมัครสำเร็จ ให้เปลี่ยนไปหน้า Sign In ทันที
+                cardLayout.show(cardPanel, "signin");
+
+                // (ทางเลือก: ล้างช่องกรอกให้หมดก่อนเปลี่ยนหน้า)
+                nameField.setText("");
+                gmailField.setText("");
+                idField.setText("");
+                passwordField.setText("");
             } else {
-                JOptionPane.showMessageDialog(this, "❌ Sign Up Failed: Gmail account has already sign up", "Sign Up", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "❌ Sign Up Failed: Gmail already registered",
+                        "Sign Up", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         return root;
     }
 
+
     private JPanel createSignInPanel() {
         JPanel root = new JPanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
-        root.setOpaque(false);
-        root.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
 
         root.add(createHeader("Login to your account", "Enter your email below to login to your account"));
 
@@ -190,28 +210,31 @@ public class LoginUI extends JFrame {
             String password = new String(passwordField.getPassword());
 
             if (gmail.isEmpty() || password.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Please enter Gmail and Password", "Validation", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Plase enter Gmail and Password", "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             Teacher t = authSystem.signIn(gmail, password);
             if (t != null) {
-                JOptionPane.showMessageDialog(this,
-                        "✅ Sign In succeeded! Greeting, " + t.getName(),
-                        "Sign In", JOptionPane.INFORMATION_MESSAGE);
+    JOptionPane.showMessageDialog(this,
+        "✅ Sign In successed! Greeting, " + t.getName(),
+        "Sign In", JOptionPane.INFORMATION_MESSAGE);
 
-                // **THE FIX**: Pass the *existing* reservationSystem instance
-                new ReservationUI(t, this.reservationSystem).setVisible(true);
-                this.dispose();
-            } else {
-                JOptionPane.showMessageDialog(this,
-                        "❌ Sign In failed: Invalid Gmail or Password",
-                        "Sign In Error", JOptionPane.ERROR_MESSAGE);
-            }
+    // สร้างระบบจองใหม่ แล้วเปิดหน้า ReservationUI
+    ReservationSystem rs = new ReservationSystem();
+    new ReservationUI(t, rs).setVisible(true);
+    this.dispose();
+}
+
         });
 
         return root;
     }
+
+    public static void show(AuthSystem authSystem,ReservationSystem reservationSystem) {
+        SwingUtilities.invokeLater(() -> {
+            LoginUI ui = new LoginUI(authSystem,reservationSystem);
+            ui.setVisible(true);
+        });
+    }
 }
-
-
