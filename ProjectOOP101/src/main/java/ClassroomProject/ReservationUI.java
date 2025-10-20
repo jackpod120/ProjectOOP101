@@ -29,6 +29,7 @@ public class ReservationUI extends JFrame {
 
         JPanel centerPanel = createSchedulerPanel();
         mainPanel.add(centerPanel, BorderLayout.CENTER); // เพิ่ม Panel กลางเข้าไปในโซน CENTER
+
     }
 
     private JPanel createLeftControlPanel() {
@@ -39,15 +40,14 @@ public class ReservationUI extends JFrame {
 
         // Dropdown สำหรับเลือกห้อง
         // Create a model for the dropdown
-        DefaultComboBoxModel<String> roomModel = new DefaultComboBoxModel<>();
+        JComboBox<Classroom> roomSelector = new JComboBox<>();
         List<Classroom> classrooms = reservationSystem.getClassrooms();
         if (classrooms != null && !classrooms.isEmpty()) {
             for (Classroom classroom : classrooms) {
-                roomModel.addElement(classroom.getName());
+                roomSelector.addItem(classroom);
             }
         }
-        JComboBox<String> roomSelector = new JComboBox<>(roomModel);
-        this.classroom = classrooms.get(0);
+        this.classroom = classrooms.getFirst();
         roomSelector.setMaximumSize(new Dimension(Integer.MAX_VALUE, roomSelector.getPreferredSize().height));
 
         // ปุ่มต่างๆ
@@ -78,16 +78,18 @@ public class ReservationUI extends JFrame {
         panel.add(Box.createVerticalGlue());
         roomSelector.addActionListener(e -> {
             this.classroom = (Classroom) roomSelector.getSelectedItem();
+            //มาเพิ่มโค้ดตรงนี้สำหรับเปลี่ยนตารางสอนของแต่ละห้อง
         });
         bookButton.addActionListener(e -> {
+            System.out.println("เปิดเมนูการจอง...");
             new BookRoomUI(this.teacher,this.reservationSystem,this.classroom);
             this.dispose();
         });
         editButton.addActionListener(e -> {
-           JOptionPane.showMessageDialog(this, "This function is currently under development.", "Underdevelopment", JOptionPane.WARNING_MESSAGE);
+           JOptionPane.showMessageDialog(this, "This function is currently under development.", "Underdeveloping", JOptionPane.WARNING_MESSAGE);
         });
         exportButton.addActionListener(e -> {
-           JOptionPane.showMessageDialog(this, "This function is currently under development.", "Underdevelopment", JOptionPane.WARNING_MESSAGE);
+           JOptionPane.showMessageDialog(this, "This function is currently under development.", "Underdeveloping", JOptionPane.WARNING_MESSAGE);
         });
         return panel;
     }

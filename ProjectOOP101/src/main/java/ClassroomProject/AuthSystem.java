@@ -1,11 +1,6 @@
 package ClassroomProject;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,26 +17,21 @@ public class AuthSystem {
             System.out.println("❌ Sign Up ล้มเหลว: " + gmail + " มีอยู่ในระบบแล้ว");
             return false;
         }
-
         for (Teacher t : teachers.values()) {
             if (t.getID().equals(id)) {
                 System.out.println("❌ Sign Up ล้มเหลว: รหัสอาจารย์ " + id + " มีอยู่ในระบบแล้ว");
                 return false;
             }
         }
-
         Teacher newTeacher = new Teacher(name, gmail, id, password);
         teachers.put(gmail, newTeacher);
         saveTeacher(newTeacher);
 
         // ✅ สร้างไฟล์จองของอาจารย์ใหม่
         createTeacherReservationFile(id);
-
         System.out.println("✅ Sign Up สำเร็จ! ยินดีต้อนรับ, " + name);
         return true;
     }
-
-
 
     public Teacher signIn(String gmail, String password) {
         Teacher teacher = teachers.get(gmail);
@@ -83,9 +73,9 @@ public class AuthSystem {
     private void saveTeacher(Teacher teacher) {
         try (FileWriter fw = new FileWriter(FILE_PATH, true)) {
             fw.write(teacher.getName() + "," +
-                    teacher.getGmail() + "," +
-                    teacher.getID() + "," +
-                    teacher.getPassword() + "\n");
+                     teacher.getGmail() + "," +
+                     teacher.getID() + "," +
+                     teacher.getPassword() + "\n");
         } catch (IOException e) {
             System.err.println("❌ ไม่สามารถบันทึกข้อมูลได้: " + e.getMessage());
         }
@@ -105,5 +95,3 @@ public class AuthSystem {
         }
     }
 }
-
-  

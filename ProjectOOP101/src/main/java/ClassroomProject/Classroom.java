@@ -13,7 +13,13 @@ public class Classroom {
         this.bookings = new ArrayList<>();
     }
 
+    @Override
+    public String toString() {
+        return this.name; // This tells JComboBox to display the classroom's name
+    }
+
     public String getName() { return name; }
+    public List<Booking> getBookings() { return bookings; }
 
     // เช็คว่าเวลาที่ต้องการจอง ว่างหรือไม่
     public boolean isAvailable(LocalDate date, TimeSlot timeSlot) {
