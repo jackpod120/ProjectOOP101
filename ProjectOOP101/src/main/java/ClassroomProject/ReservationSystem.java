@@ -46,12 +46,13 @@ public class ReservationSystem {
                 }
                 break;
             case TERM:
-                // สมมติว่า 1 เทอมคือ 4 เดือน (เช่น ส.ค. - พ.ย.)
+                YearMonth startYearMonth = YearMonth.of(year, month);
                 for (int i = 0; i < 4; i++) {
-                    Month currentMonth = month.plus(i);
-                    YearMonth termYearMonth = YearMonth.of(year, currentMonth);
+                    YearMonth termYearMonth = startYearMonth.plusMonths(i);
+                    Month currentMonth = termYearMonth.getMonth();
                     LocalDate firstDay = termYearMonth.atDay(1);
                     LocalDate termDay = firstDay.with(TemporalAdjusters.firstInMonth(timeSlot.getDayOfWeek()));
+
                     while (termDay.getMonth() == currentMonth) {
                         datesToBook.add(termDay);
                         termDay = termDay.with(TemporalAdjusters.next(timeSlot.getDayOfWeek()));
