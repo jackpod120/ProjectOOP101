@@ -11,6 +11,15 @@ import java.util.List;
 public class ReservationSystem {
     private List<Classroom> classrooms = new ArrayList<>();
 
+    // This is from your new 'Main.java' file. I am adding it here
+    // so the ReservationSystem is prepopulated when created.
+    public ReservationSystem() {
+        this.classrooms.add(new Classroom("Room 101"));
+        this.classrooms.add(new Classroom("Room 102"));
+        this.classrooms.add(new Classroom("Room 205"));
+        this.classrooms.add(new Classroom("Computer Lab"));
+    }
+
     public void addClassroom(Classroom classroom) {
         this.classrooms.add(classroom);
     }
@@ -27,35 +36,72 @@ public class ReservationSystem {
         return classrooms;
     }
 
-    public boolean makeReservation(Teacher teacher, Classroom classroom, TimeSlot timeSlot, ReservationType type, int year, Month month,String course,String code) {
+    // --- MODIFIED METHOD SIGNATURE (added 'int day') ---
+    public boolean makeReservation(Teacher teacher, Classroom classroom, TimeSlot timeSlot, ReservationType type, int year, Month month, int day, String course, String code) {
         List<LocalDate> datesToBook = new ArrayList<>();
+        DayOfWeek selectedDayOfWeek = timeSlot.getDayOfWeek();
 
         // 1. สร้างรายการวันที่จะจองตามประเภท
         switch (type) {
+
             case DAILY:
-                LocalDate nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-                datesToBook.add(nextMonday);
-                break;
-            case MONTHLY:
-                YearMonth yearMonth = YearMonth.of(year, month);
-                LocalDate firstDayOfMonth = yearMonth.atDay(1);
-                LocalDate day = firstDayOfMonth.with(TemporalAdjusters.firstInMonth(timeSlot.getDayOfWeek()));
-                while (day.getMonth() == month) {
-                    datesToBook.add(day);
-                    day = day.with(TemporalAdjusters.next(timeSlot.getDayOfWeek()));
+                try {
+                    // Use the specific date from the UI
+                    LocalDate specificDate = LocalDate.of(year, month, day);
+
+                    // Check: Does the selected date (e.g., 8th) match the DayOfWeek (e.g., SATURDAY)?
+                    if (specificDate.getDayOfWeek() != selectedDayOfWeek) {
+                        System.err.println("❌ Error: The selected date " + specificDate + " is not a " + selectedDayOfWeek);
+                        return false;
+                    }
+                    datesToBook.add(specificDate);
+                } catch (Exception e) {
+                    // This catches invalid dates, e.g., "February 30th"
+                    System.err.println("❌ Error: Invalid date created: " + year + "-" + month + "-" + day);
+                    return false;
                 }
                 break;
+
+            case MONTHLY:
+                YearMonth yearMonth = YearMonth.of(year, month);
+                LocalDate dayInMonth;
+
+                if (day > 0) {
+                    // User selected a specific start date (e.g., "Start on the 8th")
+                    dayInMonth = LocalDate.of(year, month, day);
+                } else {
+                    // User selected "All" (day == 0)
+                    dayInMonth = yearMonth.atDay(1).with(TemporalAdjusters.firstInMonth(selectedDayOfWeek));
+                }
+
+                while (dayInMonth.getMonth() == month) {
+                    datesToBook.add(dayInMonth);
+                    dayInMonth = dayInMonth.with(TemporalAdjusters.next(selectedDayOfWeek));
+                }
+                break;
+
             case TERM:
+                // --- THIS FIXES THE YEAR-END BUG ---
+                // Get the *starting* YearMonth (e.g., 2025-12)
                 YearMonth startYearMonth = YearMonth.of(year, month);
+
                 for (int i = 0; i < 4; i++) {
+                    // Use .plusMonths(i) to automatically handle year change
                     YearMonth termYearMonth = startYearMonth.plusMonths(i);
                     Month currentMonth = termYearMonth.getMonth();
-                    LocalDate firstDay = termYearMonth.atDay(1);
-                    LocalDate termDay = firstDay.with(TemporalAdjusters.firstInMonth(timeSlot.getDayOfWeek()));
+
+                    LocalDate termDay;
+                    if (i == 0 && day > 0) {
+                        // First month, and user selected a specific start date
+                        termDay = LocalDate.of(year, month, day);
+                    } else {
+                        // Subsequent months, or user selected "All"
+                        termDay = termYearMonth.atDay(1).with(TemporalAdjusters.firstInMonth(selectedDayOfWeek));
+                    }
 
                     while (termDay.getMonth() == currentMonth) {
                         datesToBook.add(termDay);
-                        termDay = termDay.with(TemporalAdjusters.next(timeSlot.getDayOfWeek()));
+                        termDay = termDay.with(TemporalAdjusters.next(selectedDayOfWeek));
                     }
                 }
                 break;
@@ -74,7 +120,7 @@ public class ReservationSystem {
             classroom.addBooking(new Booking(teacher, date, timeSlot, course, code));
         }
 
-        System.out.println("✅ การจองแบบ " + type + " สำเร็จ! จำนวน " + datesToBook.size() + " ครั้ง โดย " + teacher.getName());
+        System.out.println("✅ การจองแบบ " + type + " สำเร็จ! จำนวน " + datesToBook.size() + " ครั้ง ในห้อง " + classroom.getName());
         return true;
     }
 }

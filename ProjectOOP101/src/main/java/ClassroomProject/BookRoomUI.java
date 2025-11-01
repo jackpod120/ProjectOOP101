@@ -5,7 +5,10 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.YearMonth;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Objects;
+import java.util.Vector;
 
 
 public class BookRoomUI extends JFrame {
@@ -14,15 +17,32 @@ public class BookRoomUI extends JFrame {
     private final Classroom classroom;
     private final JComboBox<String> startTimeBox;
     private final JComboBox<String> endTimeBox;
+    private final JComboBox<Month> monthBox;
+    private final JComboBox<DayOfWeek> dayOfWeekBox;
+    private final JComboBox<ReservationType> typeBox;
+    private final JSpinner yearSpinner;
+    private final JComboBox<DateWrapper> dateBox;
+    private final JLabel dateLabel;
+
+    private static class DateWrapper {
+        private final int day;
+        private final String text;
+        public DateWrapper(int day, String text) {
+            this.day = day;
+            this.text = text;
+        }
+        public int getDay() { return day; }
+        @Override public String toString() { return text; }
+    }
+
 
     public BookRoomUI(Teacher teacher, ReservationSystem reservationSystem, Classroom classroom) {
         this.teacher = teacher;
         this.classroom = classroom;
         setTitle("Book a Room");
-        setSize(350, 500);
+        setSize(350, 550);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        // Main panel
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(new Color(245, 247, 250));
         mainPanel.setLayout(new GridBagLayout());
@@ -41,38 +61,55 @@ public class BookRoomUI extends JFrame {
         c.gridx = 0; c.gridy = 0; c.gridwidth = 2;
         card.add(header, c);
 
-        JLabel subHeader = new JLabel("Enter your information below to Book a room");
+        JLabel subHeader = new JLabel("Classroom: " + classroom.getName());
         subHeader.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        subHeader.setForeground(Color.GRAY);
         c.gridy++;
         card.add(subHeader, c);
 
         c.gridwidth = 1;
-        c.gridy++;
-        card.add(new JLabel("Course : "), c);
-        JTextField courseField = new JTextField();
-        c.gridx = 1;
-        card.add(courseField, c);
 
         c.gridx = 0; c.gridy++;
-        card.add(new JLabel("Code : "), c);
-        JTextField codeField = new JTextField();
+        card.add(new JLabel("Year:"), c);
+        int currentYear = LocalDate.now().getYear();
+        yearSpinner = new JSpinner(new SpinnerNumberModel(currentYear, currentYear, currentYear + 10, 1));
+        yearSpinner.setEditor(new JSpinner.NumberEditor(yearSpinner, "#")); // No commas
         c.gridx = 1;
-        card.add(codeField, c);
+        card.add(yearSpinner, c);
 
-        String[] timeSlots = {
-                "08:00", "09:00", "10:00", "11:00", "12:00", "13:00",
-                "14:00", "15:00", "16:00", "17:00", "18:00"
-        };
+        c.gridx = 0; c.gridy++;
+        card.add(new JLabel("Month:"), c);
+        monthBox = new JComboBox<>(Month.values());
+        monthBox.setSelectedItem(LocalDate.now().getMonth());
+        c.gridx = 1;
+        card.add(monthBox, c);
 
-        // Start Time
+        c.gridx = 0; c.gridy++;
+        card.add(new JLabel("Day:"), c);
+        dayOfWeekBox = new JComboBox<>(DayOfWeek.values());
+        dayOfWeekBox.setSelectedItem(LocalDate.now().getDayOfWeek());
+        c.gridx = 1;
+        card.add(dayOfWeekBox, c);
+
+        c.gridx = 0; c.gridy++;
+        card.add(new JLabel("Type:"), c);
+        typeBox = new JComboBox<>(ReservationType.values());
+        c.gridx = 1;
+        card.add(typeBox, c);
+
+        dateLabel = new JLabel("Date:");
+        c.gridx = 0; c.gridy++;
+        card.add(dateLabel, c);
+        dateBox = new JComboBox<>();
+        c.gridx = 1;
+        card.add(dateBox, c);
+
+        String[] timeSlots = { "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00" };
         c.gridx = 0; c.gridy++;
         card.add(new JLabel("Start Time:"), c);
         startTimeBox = new JComboBox<>(timeSlots);
         c.gridx = 1;
         card.add(startTimeBox, c);
 
-        // End Time
         c.gridx = 0; c.gridy++;
         card.add(new JLabel("End Time:"), c);
         endTimeBox = new JComboBox<>(timeSlots);
@@ -80,63 +117,56 @@ public class BookRoomUI extends JFrame {
         card.add(endTimeBox, c);
 
         c.gridx = 0; c.gridy++;
-        card.add(new JLabel("Booking Type:"), c);
-        JComboBox<ReservationType> typeBox = new JComboBox<>(ReservationType.values());
+        card.add(new JLabel("Course Name:"), c);
+        JTextField courseField = new JTextField();
         c.gridx = 1;
-        card.add(typeBox, c);
+        card.add(courseField, c);
 
         c.gridx = 0; c.gridy++;
-        card.add(new JLabel("Day:"), c);
-        JComboBox<DayOfWeek> dayOfWeekBox = new JComboBox<>(DayOfWeek.values());
-        dayOfWeekBox.removeItem(DayOfWeek.SUNDAY);
+        card.add(new JLabel("Course Code:"), c);
+        JTextField codeField = new JTextField();
         c.gridx = 1;
-        card.add(dayOfWeekBox, c);
+        card.add(codeField, c);
 
-        c.gridx = 0; c.gridy++;
-        card.add(new JLabel("Start Month:"), c);
-        JComboBox<Month> monthBox = new JComboBox<>(Month.values());
-        monthBox.setSelectedItem(LocalDate.now().getMonth()); // Default to current month
-        c.gridx = 1;
-        card.add(monthBox, c);
+        c.gridx = 0; c.gridy++; c.gridwidth = 2; c.fill = GridBagConstraints.NONE;
+        c.anchor = GridBagConstraints.CENTER;
+        JButton bookButton = new JButton("Book Now");
+        bookButton.setBackground(new Color(52, 152, 219));
+        bookButton.setForeground(Color.WHITE);
+        bookButton.setFont(new Font("SansSerif", Font.BOLD, 12));
+        card.add(bookButton, c);
 
-        c.gridx = 0; c.gridy++;
-        card.add(new JLabel("Start Year:"), c);
-        int currentYear = LocalDate.now().getYear();
-        JSpinner yearSpinner = new JSpinner(new SpinnerNumberModel(currentYear, currentYear - 1, currentYear + 10, 1));
-        yearSpinner.setEditor(new JSpinner.NumberEditor(yearSpinner, "#")); // No commas
-        c.gridx = 1;
-        card.add(yearSpinner, c);
+        Runnable dateUpdater = this::updateDateComboBox;
+        yearSpinner.addChangeListener(e -> dateUpdater.run());
+        monthBox.addActionListener(e -> dateUpdater.run());
+        dayOfWeekBox.addActionListener(e -> dateUpdater.run());
+        typeBox.addActionListener(e -> dateUpdater.run());
 
-        // Confirm button
-        c.gridx = 0; c.gridy++;
-        c.gridwidth = 2;
-        JButton confirmBtn = new JButton("confirm");
-        confirmBtn.setBackground(new Color(0, 102, 91));
-        confirmBtn.setForeground(Color.WHITE);
-        confirmBtn.setFocusPainted(false);
-        confirmBtn.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-        card.add(confirmBtn, c);
-        confirmBtn.addActionListener(_ -> {
-            System.out.println("กำลังพยายามจอง...");
+        bookButton.addActionListener(e -> {
             boolean isAvailable = true;
             TimeSlot timeSlot;
-            int yearSelected = (Integer) yearSpinner.getValue();
-            Month monthSelected = (Month) monthBox.getSelectedItem();
 
             DayOfWeek dayOfWeek = (DayOfWeek) Objects.requireNonNull(dayOfWeekBox.getSelectedItem());
-            String startString = (String) Objects.requireNonNull(startTimeBox.getSelectedItem());
-            String endString = (String) Objects.requireNonNull(endTimeBox.getSelectedItem());
-
-            LocalTime timeTimeSlotStart = LocalTime.parse(startString);
-            LocalTime timeTimeSlotEnd = LocalTime.parse(endString);
-
+            LocalTime timeTimeSlotStart = LocalTime.parse((String) Objects.requireNonNull(startTimeBox.getSelectedItem()));
+            LocalTime timeTimeSlotEnd = LocalTime.parse((String) Objects.requireNonNull(endTimeBox.getSelectedItem()));
             ReservationType reservationType = (ReservationType) Objects.requireNonNull(typeBox.getSelectedItem());
+
+            Month monthSelected = (Month) Objects.requireNonNull(monthBox.getSelectedItem());
+            int yearSelected = (Integer) yearSpinner.getValue();
+
+            DateWrapper selectedWrapper = (DateWrapper) dateBox.getSelectedItem();
+            if (selectedWrapper == null) {
+                JOptionPane.showMessageDialog(this, "There are no valid " + dayOfWeek + "s in " + monthSelected + " " + yearSelected + ".", "Date Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            int daySelected = selectedWrapper.getDay();
+
             String course = courseField.getText().trim();
             String code = codeField.getText().trim();
 
             if (timeTimeSlotStart.isAfter(timeTimeSlotEnd) || timeTimeSlotStart.equals(timeTimeSlotEnd)) {
-                JOptionPane.showMessageDialog(this, "Start time must be before end time.", "Time Error", JOptionPane.ERROR_MESSAGE);
                 isAvailable = false;
+                JOptionPane.showMessageDialog(this, "Start time must be before end time.", "Error", JOptionPane.ERROR_MESSAGE);
             }
 
             if (course.isEmpty()) {
@@ -149,18 +179,17 @@ public class BookRoomUI extends JFrame {
                 isAvailable = false;
                 System.out.println("❌ เกิดข้อผิดพลาด, โปรดใส่รหัสวิชา");
                 JOptionPane.showMessageDialog(this, "Please enter your course's code you want to book.", "Error", JOptionPane.ERROR_MESSAGE);
-
             }
 
             if (isAvailable) {
                 timeSlot = new TimeSlot(dayOfWeek, timeTimeSlotStart, timeTimeSlotEnd);
 
-                if (reservationSystem.makeReservation(this.teacher, this.classroom, timeSlot, reservationType, yearSelected, monthSelected, course, code)) {
+                if (reservationSystem.makeReservation(this.teacher, this.classroom, timeSlot, reservationType, yearSelected, monthSelected, daySelected, course, code)) {
                     this.classroom.displaySchedule();
                     new ReservationUI(teacher, reservationSystem).setVisible(true);
                     this.dispose();
                 } else {
-                    JOptionPane.showMessageDialog(this, "Sorry, your time is already in use.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Sorry, your time is already in use or the date is invalid.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -175,11 +204,38 @@ public class BookRoomUI extends JFrame {
             this.dispose();
         });
 
+        updateDateComboBox();
+
         gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(card, gbc);
         add(mainPanel);
-        setVisible(true);
     }
 
-}
+    private void updateDateComboBox() {
+        int year = (Integer) yearSpinner.getValue();
+        Month month = (Month) monthBox.getSelectedItem();
+        DayOfWeek day = (DayOfWeek) dayOfWeekBox.getSelectedItem();
+        ReservationType type = (ReservationType) typeBox.getSelectedItem();
 
+        if (month == null || day == null) return;
+
+        Vector<DateWrapper> dates = new Vector<>();
+
+        if (type == ReservationType.DAILY) {
+            dateLabel.setText("Date:");
+        } else {
+            dateLabel.setText("Start Date:");
+            dates.add(new DateWrapper(0, "All " + day + "s"));
+        }
+
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate date = yearMonth.atDay(1).with(TemporalAdjusters.firstInMonth(day));
+
+        while (date.getMonth() == month) {
+            dates.add(new DateWrapper(date.getDayOfMonth(), String.valueOf(date.getDayOfMonth())));
+            date = date.with(TemporalAdjusters.next(day));
+        }
+
+        dateBox.setModel(new DefaultComboBoxModel<>(dates));
+    }
+}

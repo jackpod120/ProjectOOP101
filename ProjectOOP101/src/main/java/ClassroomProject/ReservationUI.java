@@ -178,7 +178,16 @@ public class ReservationUI extends JFrame {
             }
         });
         exportButton.addActionListener(e -> {
-           JOptionPane.showMessageDialog(this, "This function is currently under development.", "Underdeveloping", JOptionPane.WARNING_MESSAGE);
+            if (this.classroom == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Please select a classroom from the dropdown list first.",
+                        "No Classroom Selected",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            Export exporter = new Export(this.teacher, this.reservationSystem, this.classroom);
+            exporter.generateExcel();
         });
 
         logoutButton.addActionListener(e -> {
