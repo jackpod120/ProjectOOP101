@@ -40,7 +40,6 @@ public class ReservationSystem {
         // 1. สร้างรายการวันที่จะจองตามประเภท
         switch (type) {
             case DAILY:
-                // สำหรับรายวัน, เราจะสมมติว่าจองวันจันทร์ที่จะถึงนี้
                 LocalDate nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
                 datesToBook.add(nextMonday);
                 break;

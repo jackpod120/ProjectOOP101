@@ -39,6 +39,10 @@ public class Classroom {
         this.bookings.add(newBooking);
     }
 
+    public boolean removeBooking(Booking bookingToRemove) {
+        return this.bookings.remove(bookingToRemove);
+    }
+
     public void displaySchedule() {
         System.out.println("--- ตารางสอนห้อง " + name + " ---");
         if (bookings.isEmpty()) {

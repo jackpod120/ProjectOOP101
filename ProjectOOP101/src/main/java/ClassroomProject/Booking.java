@@ -20,6 +20,8 @@ public class Booking {
     public Teacher getTeacher() { return teacher; }
     public LocalDate getDate() { return date; }
     public TimeSlot getTimeSlot() { return timeSlot; }
+    public String getCourse() { return course; }
+    public String getCode() { return code; }
 
     @Override
     public String toString() {
