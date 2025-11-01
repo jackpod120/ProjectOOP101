@@ -36,12 +36,10 @@ public class ReservationSystem {
         return classrooms;
     }
 
-    // --- MODIFIED METHOD SIGNATURE (added 'int day') ---
     public boolean makeReservation(Teacher teacher, Classroom classroom, TimeSlot timeSlot, ReservationType type, int year, Month month, int day, String course, String code) {
         List<LocalDate> datesToBook = new ArrayList<>();
         DayOfWeek selectedDayOfWeek = timeSlot.getDayOfWeek();
 
-        // 1. สร้างรายการวันที่จะจองตามประเภท
         switch (type) {
 
             case DAILY:
@@ -81,21 +79,16 @@ public class ReservationSystem {
                 break;
 
             case TERM:
-                // --- THIS FIXES THE YEAR-END BUG ---
-                // Get the *starting* YearMonth (e.g., 2025-12)
                 YearMonth startYearMonth = YearMonth.of(year, month);
 
                 for (int i = 0; i < 4; i++) {
-                    // Use .plusMonths(i) to automatically handle year change
                     YearMonth termYearMonth = startYearMonth.plusMonths(i);
                     Month currentMonth = termYearMonth.getMonth();
 
                     LocalDate termDay;
                     if (i == 0 && day > 0) {
-                        // First month, and user selected a specific start date
                         termDay = LocalDate.of(year, month, day);
                     } else {
-                        // Subsequent months, or user selected "All"
                         termDay = termYearMonth.atDay(1).with(TemporalAdjusters.firstInMonth(selectedDayOfWeek));
                     }
 
@@ -107,7 +100,6 @@ public class ReservationSystem {
                 break;
         }
 
-        // 2. ตรวจสอบว่าทุกวันที่ต้องการจองว่างหรือไม่
         for (LocalDate date : datesToBook) {
             if (!classroom.isAvailable(date, timeSlot)) {
                 System.out.println("❌ การจองล้มเหลว: วันที่ " + date + " เวลา " + timeSlot + " ในห้อง " + classroom.getName() + " ไม่ว่าง");
@@ -115,7 +107,6 @@ public class ReservationSystem {
             }
         }
 
-        // 3. ถ้าทุกวันว่าง ให้ทำการจองทั้งหมด
         for (LocalDate date : datesToBook) {
             classroom.addBooking(new Booking(teacher, date, timeSlot, course, code));
         }

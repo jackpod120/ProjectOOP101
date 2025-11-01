@@ -6,6 +6,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 public class EditUI extends JFrame {
 
@@ -27,11 +28,10 @@ public class EditUI extends JFrame {
         this.reservationSystem = reservationSystem;
         this.classroom = classroom;
         this.bookingToEdit = bookingToEdit;
-        this.reservationUI = reservationUI; // Save the reference
+        this.reservationUI = reservationUI;
 
         setTitle("Edit Booking");
         setSize(450, 500);
-        // Dispose this window, don't exit the whole app
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -71,7 +71,6 @@ public class EditUI extends JFrame {
         card.add(new JLabel("Day:"), c);
         dayOfWeekBox = new JComboBox<>(DayOfWeek.values());
         dayOfWeekBox.setSelectedItem(bookingToEdit.getTimeSlot().getDayOfWeek());
-        dayOfWeekBox.removeItem(DayOfWeek.SUNDAY);
         c.gridx = 1;
         card.add(dayOfWeekBox, c);
 
@@ -100,14 +99,14 @@ public class EditUI extends JFrame {
         // Course Name
         c.gridx = 0; c.gridy++;
         card.add(new JLabel("Course Name:"), c);
-        courseField = new JTextField(bookingToEdit.getCourse());
+        courseField = new JTextField(bookingToEdit.getCourse()); // Needs getCourse() in Booking.java
         c.gridx = 1;
         card.add(courseField, c);
 
         // Course Code
         c.gridx = 0; c.gridy++;
         card.add(new JLabel("Course Code:"), c);
-        codeField = new JTextField(bookingToEdit.getCode());
+        codeField = new JTextField(bookingToEdit.getCode()); // Needs getCode() in Booking.java
         c.gridx = 1;
         card.add(codeField, c);
 
@@ -143,32 +142,28 @@ public class EditUI extends JFrame {
         c.insets = new Insets(20, 10, 8, 10);
         card.add(goBackButton, c);
 
-        // --- Action Listeners ---
 
         goBackButton.addActionListener(e -> {
-            reservationUI.setVisible(true); // Show the main schedule again
-            this.dispose(); // Close this edit window
+            reservationUI.setVisible(true);
+            this.dispose();
         });
 
         saveButton.addActionListener(e -> onSaveChanges());
 
         deleteButton.addActionListener(e -> onDeleteBooking());
 
-        // Add card to main panel
         gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(card, gbc);
         add(mainPanel);
     }
 
     private void onSaveChanges() {
-        // 1. Get new values from the UI
-        DayOfWeek newDay = (DayOfWeek) dayOfWeekBox.getSelectedItem();
-        LocalTime newStartTime = LocalTime.parse((String) startTimeBox.getSelectedItem());
-        LocalTime newEndTime = LocalTime.parse((String) endTimeBox.getSelectedItem());
+        DayOfWeek newDay = (DayOfWeek) Objects.requireNonNull(dayOfWeekBox.getSelectedItem());
+        LocalTime newStartTime = LocalTime.parse((String) Objects.requireNonNull(startTimeBox.getSelectedItem()));
+        LocalTime newEndTime = LocalTime.parse((String) Objects.requireNonNull(endTimeBox.getSelectedItem()));
         String newCourse = courseField.getText().trim();
         String newCode = codeField.getText().trim();
 
-        // 2. Validate input
         if (newStartTime.isAfter(newEndTime) || newStartTime.equals(newEndTime)) {
             JOptionPane.showMessageDialog(this, "Start time must be before end time.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
@@ -177,33 +172,35 @@ public class EditUI extends JFrame {
             JOptionPane.showMessageDialog(this, "Course Name and Code cannot be empty.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        // 3. Create new TimeSlot and check for availability
         TimeSlot newTimeSlot = new TimeSlot(newDay, newStartTime, newEndTime);
-        LocalDate date = bookingToEdit.getDate(); // The date stays the same
 
-        // Temporarily remove the *old* booking to check if the *new* time is free
+        LocalDate oldDate = bookingToEdit.getDate();
+        DayOfWeek oldDay = bookingToEdit.getTimeSlot().getDayOfWeek();
+
+        LocalDate newDate;
+        if (oldDay.equals(newDay)) {
+            newDate = oldDate;
+        } else {
+            int dayDifference = newDay.getValue() - oldDay.getValue();
+            newDate = oldDate.plusDays(dayDifference);
+        }
+
         classroom.removeBooking(bookingToEdit);
 
-        if (classroom.isAvailable(date, newTimeSlot)) {
-            // Success! The new time is available.
-            // Create a new booking object
-            Booking newBooking = new Booking(teacher, date, newTimeSlot, newCourse, newCode);
+        if (classroom.isAvailable(newDate, newTimeSlot)) {
 
-            // Add the new booking
+            Booking newBooking = new Booking(teacher, newDate, newTimeSlot, newCourse, newCode);
+
             classroom.addBooking(newBooking);
 
             JOptionPane.showMessageDialog(this, "Booking updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
-            // Refresh the main schedule and go back
             reservationUI.refreshSchedule();
             reservationUI.setVisible(true);
             this.dispose();
         } else {
-            // Failed. The new time conflicts with *another* booking.
-            // Add the original booking back!
             classroom.addBooking(bookingToEdit);
-            JOptionPane.showMessageDialog(this, "The new time conflicts with another booking.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "The new date/time conflicts with another booking.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -218,16 +215,13 @@ public class EditUI extends JFrame {
         );
 
         if (choice == JOptionPane.YES_OPTION) {
-            // User confirmed. Remove the booking.
             if (classroom.removeBooking(bookingToEdit)) {
                 JOptionPane.showMessageDialog(this, "Booking successfully deleted.", "Success", JOptionPane.INFORMATION_MESSAGE);
 
-                // Refresh the main schedule and go back
                 reservationUI.refreshSchedule();
                 reservationUI.setVisible(true);
                 this.dispose();
             } else {
-                // This shouldn't happen, but good to check
                 JOptionPane.showMessageDialog(this, "Error: Could not delete booking.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
