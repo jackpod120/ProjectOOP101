@@ -11,13 +11,6 @@ import java.util.List;
 public class ReservationSystem {
     private List<Classroom> classrooms = new ArrayList<>();
 
-    public ReservationSystem() {
-        this.classrooms.add(new Classroom("Room 101"));
-        this.classrooms.add(new Classroom("Room 102"));
-        this.classrooms.add(new Classroom("Room 205"));
-        this.classrooms.add(new Classroom("Computer Lab"));
-    }
-
     public void addClassroom(Classroom classroom) {
         this.classrooms.add(classroom);
     }

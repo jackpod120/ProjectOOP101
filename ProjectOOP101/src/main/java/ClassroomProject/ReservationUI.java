@@ -8,7 +8,6 @@ import java.util.List;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.Vector;
-import java.util.stream.Collectors;
 
 public class ReservationUI extends JFrame {
     private final Teacher teacher;
@@ -248,8 +247,6 @@ public class ReservationUI extends JFrame {
                     cell.add(dayLabel);
                 } else { // ช่องตารางเปล่าๆ
                     cell.setBackground(Color.WHITE);
-                    // TODO: ใส่ลอจิกเพื่อแสดงการจองห้องสมุด
-                    // จาก 'this.classroom.getBooking()'
                 }
                 gridPanel.add(cell);
             }
@@ -260,20 +257,11 @@ public class ReservationUI extends JFrame {
     }
     public void refreshSchedule() {
         System.out.println("Refreshing schedule...");
-
-        // 1. Remove the old schedule panel
         if (centerPanel != null) {
             mainPanel.remove(centerPanel);
         }
-
-        // 2. Re-create the schedule panel with the new, updated data
-        // It will automatically use the currently selected `this.classroom`
         this.centerPanel = createSchedulerPanel();
-
-        // 3. Add the new panel back to the CENTER
         mainPanel.add(centerPanel, BorderLayout.CENTER);
-
-        // 4. Force the UI to redraw
         mainPanel.revalidate();
         mainPanel.repaint();
     }
