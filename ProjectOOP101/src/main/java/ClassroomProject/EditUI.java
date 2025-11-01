@@ -71,6 +71,7 @@ public class EditUI extends JFrame {
         card.add(new JLabel("Day:"), c);
         dayOfWeekBox = new JComboBox<>(DayOfWeek.values());
         dayOfWeekBox.setSelectedItem(bookingToEdit.getTimeSlot().getDayOfWeek());
+        dayOfWeekBox.removeItem(DayOfWeek.SUNDAY);
         c.gridx = 1;
         card.add(dayOfWeekBox, c);
 

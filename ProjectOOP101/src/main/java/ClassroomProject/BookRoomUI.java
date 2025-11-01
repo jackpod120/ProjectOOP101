@@ -94,6 +94,7 @@ public class BookRoomUI extends JFrame {
         c.gridx = 0; c.gridy++;
         card.add(new JLabel("Day:"), c);
         JComboBox<DayOfWeek> dayOfWeekBox = new JComboBox<>(DayOfWeek.values());
+        dayOfWeekBox.removeItem(DayOfWeek.SUNDAY);
         c.gridx = 1;
         card.add(dayOfWeekBox, c);
 

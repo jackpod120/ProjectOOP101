@@ -14,7 +14,7 @@ public class ReservationUI extends JFrame {
     private final Teacher teacher;
     private final ReservationSystem reservationSystem;
     private Classroom classroom;
-    private JPanel mainPanel;     // Make this an instance variable
+    private final JPanel mainPanel;     // Make this an instance variable
     private JPanel centerPanel;   // Make this an instance variable
 
     public ReservationUI(Teacher teacher, ReservationSystem reservationSystem) {
@@ -69,6 +69,7 @@ public class ReservationUI extends JFrame {
         exportButton.setBackground(new Color(0xD6A6A8)); // สีชมพูอ่อน
 
         JButton logoutButton = new JButton("Logout");
+        logoutButton.setBackground(new Color(242, 73, 73));
 
         // จัดสไตล์ปุ่มให้เหมือนกัน
         styleButton(bookButton);
