@@ -64,5 +64,3 @@ public class Main {
         room101.displaySchedule();
     }
 }
-
-//กุไปกินข้าว XDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
