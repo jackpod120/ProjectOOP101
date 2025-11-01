@@ -24,9 +24,8 @@ public class TimeSlot {
     // Method to check for overlapping times
     public boolean overlapsWith(TimeSlot other) {
         if (this.dayOfWeek != other.dayOfWeek) {
-            return false; // Different days can't overlap
+            return false;
         }
-        // Times overlap if (StartA < EndB) and (StartB < EndA)
         return this.startTime.isBefore(other.endTime) && other.startTime.isBefore(this.endTime);
     }
 

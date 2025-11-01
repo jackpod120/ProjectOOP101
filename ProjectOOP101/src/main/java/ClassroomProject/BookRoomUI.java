@@ -2,6 +2,7 @@ package ClassroomProject;
 import javax.swing.*;
 import java.awt.*;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
 import java.util.Objects;
@@ -85,18 +86,26 @@ public class BookRoomUI extends JFrame {
         card.add(typeBox, c);
 
         c.gridx = 0; c.gridy++;
-        card.add(new JLabel("Month:"), c);
-        JComboBox<Month> monthBox = new JComboBox<>(Month.values());
-        monthBox.setSelectedItem(Month.AUGUST); // Set a default
-        c.gridx = 1;
-        card.add(monthBox, c);
-
-        c.gridx = 0; c.gridy++;
         card.add(new JLabel("Day:"), c);
         JComboBox<DayOfWeek> dayOfWeekBox = new JComboBox<>(DayOfWeek.values());
         dayOfWeekBox.removeItem(DayOfWeek.SUNDAY);
         c.gridx = 1;
         card.add(dayOfWeekBox, c);
+
+        c.gridx = 0; c.gridy++;
+        card.add(new JLabel("Start Month:"), c);
+        JComboBox<Month> monthBox = new JComboBox<>(Month.values());
+        monthBox.setSelectedItem(LocalDate.now().getMonth()); // Default to current month
+        c.gridx = 1;
+        card.add(monthBox, c);
+
+        c.gridx = 0; c.gridy++;
+        card.add(new JLabel("Start Year:"), c);
+        int currentYear = LocalDate.now().getYear();
+        JSpinner yearSpinner = new JSpinner(new SpinnerNumberModel(currentYear, currentYear - 1, currentYear + 10, 1));
+        yearSpinner.setEditor(new JSpinner.NumberEditor(yearSpinner, "#")); // No commas
+        c.gridx = 1;
+        card.add(yearSpinner, c);
 
         // Confirm button
         c.gridx = 0; c.gridy++;
@@ -111,6 +120,8 @@ public class BookRoomUI extends JFrame {
             System.out.println("กำลังพยายามจอง...");
             boolean isAvailable = true;
             TimeSlot timeSlot;
+            int yearSelected = (Integer) yearSpinner.getValue();
+            Month monthSelected = (Month) monthBox.getSelectedItem();
 
             DayOfWeek dayOfWeek = (DayOfWeek) Objects.requireNonNull(dayOfWeekBox.getSelectedItem());
             String startString = (String) Objects.requireNonNull(startTimeBox.getSelectedItem());
@@ -144,7 +155,7 @@ public class BookRoomUI extends JFrame {
             if (isAvailable) {
                 timeSlot = new TimeSlot(dayOfWeek, timeTimeSlotStart, timeTimeSlotEnd);
 
-                if (reservationSystem.makeReservation(this.teacher, this.classroom, timeSlot, reservationType, 2025, Month.AUGUST, course, code)) {
+                if (reservationSystem.makeReservation(this.teacher, this.classroom, timeSlot, reservationType, yearSelected, monthSelected, course, code)) {
                     this.classroom.displaySchedule();
                     new ReservationUI(teacher, reservationSystem).setVisible(true);
                     this.dispose();
