@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class AuthSystem {
-    private static final String FILE_PATH = "data/teachers.csv";
+    private static final String FILE_PATH = System.getProperty("user.dir") + File.separator + "data" + File.separator + "teachers.csv";
     private Map<String, Teacher> teachers = new HashMap<>();
-
-    public AuthSystem() {
+    private ReservationSystem reservationSystem;
+    public AuthSystem(ReservationSystem reservationSystem) {
+        this.reservationSystem = reservationSystem;
         loadTeachers();
     }
 
@@ -25,7 +26,8 @@ public class AuthSystem {
         }
         Teacher newTeacher = new Teacher(name, gmail, id, password);
         teachers.put(gmail, newTeacher);
-        saveTeacher(newTeacher);
+        saveTeacher(newTeacher); // บันทึกลง teachers.csv
+        createTeacherReservationFile(id); // 🔸 สร้างไฟล์ของอาจารย์
 
         // ✅ สร้างไฟล์จองของอาจารย์ใหม่
         createTeacherReservationFile(id);
@@ -60,7 +62,10 @@ public class AuthSystem {
                     String gmail = parts[1];
                     String id = parts[2];
                     String password = parts[3];
-                    teachers.put(gmail, new Teacher(name, gmail, id, password));
+                    Teacher teacher =  new Teacher(name, gmail, id, password);
+                    teachers.put(gmail, teacher);
+                    DataManager dataManager = new DataManager();
+                    dataManager.loadBookings(teacher,reservationSystem);
                 }
             }
             System.out.println("📂 โหลดข้อมูลครูสำเร็จ (" + teachers.size() + " คน)");
@@ -83,15 +88,22 @@ public class AuthSystem {
 
     // 🔹 สร้างไฟล์ CSV สำหรับอาจารย์แต่ละคน เช่น data/T001.csv
     private void createTeacherReservationFile(String teacherID) {
-        File file = new File("data/" + teacherID + ".csv");
+        File dir = new File("data");
+        if (!dir.exists()) dir.mkdirs();
+
+        File file = new File(dir, teacherID + ".csv");
         if (!file.exists()) {
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
-                bw.write("ReservationID,Room,Day,StartTime,EndTime,Type,Month,Year");
+                // FIX: เพิ่ม Course และ Code
+                bw.write("ReservationID,Room,Course,Code,Day,StartTime,EndTime,Type,Month,Year,Date");
                 bw.newLine();
-                System.out.println("📁 สร้างไฟล์จองสำหรับ " + teacherID + " แล้ว");
+                System.out.println("📁 สร้างไฟล์ใหม่ให้ " + teacherID);
             } catch (IOException e) {
                 System.err.println("❌ ไม่สามารถสร้างไฟล์ของ " + teacherID + ": " + e.getMessage());
             }
+        } else {
+            System.out.println("ℹ️ ไฟล์ของ " + teacherID + " มีอยู่แล้ว ไม่ต้องสร้างใหม่");
+            }
         }
     }
-}
+
