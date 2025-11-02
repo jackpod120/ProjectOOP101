@@ -216,7 +216,6 @@ public class LoginUI extends JFrame {
                         "✅ Sign In succeeded! Greeting, " + t.getName(),
                         "Sign In", JOptionPane.INFORMATION_MESSAGE);
 
-                // **THE FIX**: Pass the *existing* reservationSystem instance
                 new ReservationUI(t, this.reservationSystem).setVisible(true);
                 this.dispose();
             } else {

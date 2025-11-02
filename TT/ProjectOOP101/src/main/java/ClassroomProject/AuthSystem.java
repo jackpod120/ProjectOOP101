@@ -7,8 +7,9 @@ import java.util.Map;
 public class AuthSystem {
     private static final String FILE_PATH = System.getProperty("user.dir") + File.separator + "data" + File.separator + "teachers.csv";
     private Map<String, Teacher> teachers = new HashMap<>();
-
-    public AuthSystem() {
+    private ReservationSystem reservationSystem;
+    public AuthSystem(ReservationSystem reservationSystem) {
+        this.reservationSystem = reservationSystem;
         loadTeachers();
     }
 
@@ -61,7 +62,10 @@ public class AuthSystem {
                     String gmail = parts[1];
                     String id = parts[2];
                     String password = parts[3];
-                    teachers.put(gmail, new Teacher(name, gmail, id, password));
+                    Teacher teacher =  new Teacher(name, gmail, id, password);
+                    teachers.put(gmail, teacher);
+                    DataManager dataManager = new DataManager();
+                    dataManager.loadBookings(teacher,reservationSystem);
                 }
             }
             System.out.println("📂 โหลดข้อมูลครูสำเร็จ (" + teachers.size() + " คน)");
@@ -91,7 +95,7 @@ public class AuthSystem {
         if (!file.exists()) {
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
                 // FIX: เพิ่ม Course และ Code
-                bw.write("ReservationID,Room,Course,Code,Day,StartTime,EndTime,Type,Month,Year");
+                bw.write("ReservationID,Room,Course,Code,Day,StartTime,EndTime,Type,Month,Year,Date");
                 bw.newLine();
                 System.out.println("📁 สร้างไฟล์ใหม่ให้ " + teacherID);
             } catch (IOException e) {

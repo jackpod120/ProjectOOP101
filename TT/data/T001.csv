@@ -1,1 +1,3 @@
-ReservationID,Room,Course,Code,Day,StartTime,EndTime,Type,Month,Year
+ReservationID,Room,Course,Code,Day,StartTime,EndTime,Type,Month,Year,Date
+RT00150759521634002025-08-18,Room 101,Mathematics,123456789,MONDAY,08:00,11:00,MONTHLY,AUGUST,2025,18
+RT00150759524376002025-08-25,Room 101,Mathematics,123456789,MONDAY,08:00,11:00,MONTHLY,AUGUST,2025,25
