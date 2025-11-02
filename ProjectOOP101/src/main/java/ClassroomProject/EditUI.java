@@ -6,7 +6,9 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Objects;
+
 
 public class EditUI extends JFrame {
 
@@ -15,23 +17,25 @@ public class EditUI extends JFrame {
     private final Classroom classroom;
     private final Booking bookingToEdit;
     private final ReservationUI reservationUI; // To go back
-
-    // UI Components
     private JComboBox<DayOfWeek> dayOfWeekBox;
     private JComboBox<String> startTimeBox;
     private JComboBox<String> endTimeBox;
     private JTextField courseField;
     private JTextField codeField;
+    // 🟢 FIX 1: ประกาศ DataManager เป็น final และสร้าง instance
+    private final DataManager dataManager;
+
 
     public EditUI(Teacher teacher, ReservationSystem reservationSystem, Classroom classroom, Booking bookingToEdit, ReservationUI reservationUI) {
         this.teacher = teacher;
-        this.reservationSystem = reservationSystem;
+        this.reservationSystem = reservationSystem; // อ็อบเจกต์นี้ถูกส่งเข้ามาแล้ว
         this.classroom = classroom;
         this.bookingToEdit = bookingToEdit;
         this.reservationUI = reservationUI;
-
+        this.dataManager = new DataManager(reservationSystem);
         setTitle("Edit Booking");
         setSize(450, 500);
+        // Dispose this window, don't exit the whole app
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -71,6 +75,7 @@ public class EditUI extends JFrame {
         card.add(new JLabel("Day:"), c);
         dayOfWeekBox = new JComboBox<>(DayOfWeek.values());
         dayOfWeekBox.setSelectedItem(bookingToEdit.getTimeSlot().getDayOfWeek());
+        // 🟢 FIX 2: ลบวันอาทิตย์ออก (ถ้าไม่ได้ใช้)
         dayOfWeekBox.removeItem(DayOfWeek.SUNDAY);
         c.gridx = 1;
         card.add(dayOfWeekBox, c);
@@ -78,7 +83,7 @@ public class EditUI extends JFrame {
         // Time selection
         String[] timeSlots = {
                 "08:00", "09:00", "10:00", "11:00", "12:00", "13:00",
-                "14:00", "15:00", "16:00", "17:00", "18:00"
+                "14:00", "15:00", "16:00", "17:00", "18:00", "19:00" // 🟢 เพิ่ม 19:00 เพื่อให้ End Time ถูกต้อง
         };
 
         // Start Time
@@ -100,14 +105,14 @@ public class EditUI extends JFrame {
         // Course Name
         c.gridx = 0; c.gridy++;
         card.add(new JLabel("Course Name:"), c);
-        courseField = new JTextField(bookingToEdit.getCourse()); // Needs getCourse() in Booking.java
+        courseField = new JTextField(bookingToEdit.getCourse());
         c.gridx = 1;
         card.add(courseField, c);
 
         // Course Code
         c.gridx = 0; c.gridy++;
         card.add(new JLabel("Course Code:"), c);
-        codeField = new JTextField(bookingToEdit.getCode()); // Needs getCode() in Booking.java
+        codeField = new JTextField(bookingToEdit.getCode());
         c.gridx = 1;
         card.add(codeField, c);
 
@@ -143,28 +148,33 @@ public class EditUI extends JFrame {
         c.insets = new Insets(20, 10, 8, 10);
         card.add(goBackButton, c);
 
+        // --- Action Listeners ---
 
         goBackButton.addActionListener(e -> {
-            reservationUI.setVisible(true);
-            this.dispose();
+            reservationUI.refreshSchedule(); // อัปเดตตารางเผื่อมีการเปลี่ยนแปลง
+            reservationUI.setVisible(true); // Show the main schedule again
+            this.dispose(); // Close this edit window
         });
 
         saveButton.addActionListener(e -> onSaveChanges());
 
         deleteButton.addActionListener(e -> onDeleteBooking());
 
+        // Add card to main panel
         gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(card, gbc);
         add(mainPanel);
     }
 
     private void onSaveChanges() {
+        // 1. Get new values from the UI
         DayOfWeek newDay = (DayOfWeek) Objects.requireNonNull(dayOfWeekBox.getSelectedItem());
         LocalTime newStartTime = LocalTime.parse((String) Objects.requireNonNull(startTimeBox.getSelectedItem()));
         LocalTime newEndTime = LocalTime.parse((String) Objects.requireNonNull(endTimeBox.getSelectedItem()));
         String newCourse = courseField.getText().trim();
         String newCode = codeField.getText().trim();
 
+        // 2. Validate input
         if (newStartTime.isAfter(newEndTime) || newStartTime.equals(newEndTime)) {
             JOptionPane.showMessageDialog(this, "Start time must be before end time.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
@@ -173,35 +183,68 @@ public class EditUI extends JFrame {
             JOptionPane.showMessageDialog(this, "Course Name and Code cannot be empty.", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+        // 3. Create new TimeSlot
         TimeSlot newTimeSlot = new TimeSlot(newDay, newStartTime, newEndTime);
 
+        // 4. Calculate new date
         LocalDate oldDate = bookingToEdit.getDate();
-        DayOfWeek oldDay = bookingToEdit.getTimeSlot().getDayOfWeek();
-
         LocalDate newDate;
-        if (oldDay.equals(newDay)) {
-            newDate = oldDate;
-        } else {
-            int dayDifference = newDay.getValue() - oldDay.getValue();
-            newDate = oldDate.plusDays(dayDifference);
-        }
 
+        // 🟢 FIX 3: แก้ไข Logic การหาวันที่ใหม่
+            if (oldDate.getDayOfWeek().equals(newDay)) {
+                newDate = oldDate; // วันเดิม วันที่เดิม
+            } else {
+                // หาวันที่ใหม่ที่ตรงกับ DayOfWeek ใหม่ (ที่ใกล้วันที่เดิมที่สุด)
+                newDate = oldDate.with(TemporalAdjusters.nextOrSame(newDay));
+            }
+
+
+
+        // 5. 🟢 ลบของเก่า (ชั่วคราว) เพื่อเช็ค Availability
         classroom.removeBooking(bookingToEdit);
 
-        if (classroom.isAvailable(newDate, newTimeSlot)) {
+        boolean isAvailable = classroom.isAvailable(newDate, newTimeSlot);
 
-            Booking newBooking = new Booking(teacher, newDate, newTimeSlot, newCourse, newCode);
+        if (isAvailable) {
+            // 6. ถ้าว่าง: ลบของเก่าออกจากทุกที่อย่างถาวร
+            dataManager.deleteBooking(teacher, bookingToEdit.getReservationID()); // ลบจาก CSV
+            reservationSystem.removeBookingInternal(bookingToEdit); // ลบจาก System Memory
 
-            classroom.addBooking(newBooking);
+            // 7. สร้างการจองใหม่โดยใช้ makeReservation
+            // 🟢 FIX 4: เรียก makeReservation ครั้งเดียว
+            boolean success = reservationSystem.makeReservation(
+                    teacher,
+                    classroom,
+                    newTimeSlot,
+                    ReservationType.DAILY, // เพราะแก้ได้ครั้งเดียว ต้องเปลี่ยน ReservationType to DAILY
+                    newDate.getYear(),
+                    newDate.getMonth(),
+                    newDate.getDayOfMonth(),
+                    newCourse,
+                    newCode
+            );
 
-            JOptionPane.showMessageDialog(this, "Booking updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            if (success) {
+                JOptionPane.showMessageDialog(this, "✅ Booking updated successfully! New date: " + newDate, "Success", JOptionPane.INFORMATION_MESSAGE);
+                reservationUI.refreshSchedule();
+                reservationUI.setVisible(true);
+                this.dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, "❌ Failed to save new booking after checking availability.", "Error", JOptionPane.ERROR_MESSAGE);
+                // คืนของเก่ากลับไป (เพราะบันทึกของใหม่ไม่สำเร็จ)
+                classroom.addBooking(bookingToEdit); // คืนเข้าห้อง
+                dataManager.addBooking(teacher, bookingToEdit); // คืนเข้า CSV
+                reservationSystem.addBookingInternal(bookingToEdit); // คืนเข้า System
+                reservationUI.refreshSchedule();
+                reservationUI.setVisible(true);
+                this.dispose();
+            }
 
-            reservationUI.refreshSchedule();
-            reservationUI.setVisible(true);
-            this.dispose();
         } else {
+            // 8. ถ้าชน: คืนของเก่าเข้าที่เดิมและแจ้งผู้ใช้
             classroom.addBooking(bookingToEdit);
-            JOptionPane.showMessageDialog(this, "The new date/time conflicts with another booking.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "❌ The new date/time conflicts with another booking.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -209,21 +252,30 @@ public class EditUI extends JFrame {
         int choice = JOptionPane.showConfirmDialog(
                 this,
                 "Are you sure you want to delete this booking?\n" +
-                        bookingToEdit.getDate() + " @ " + bookingToEdit.getTimeSlot().getStartTime(),
+                        bookingToEdit.getDate() + " @ " + bookingToEdit.getTimeSlot().getStartTime() +
+                        " (" + bookingToEdit.getType() + ")",
                 "Confirm Deletion",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE
         );
 
         if (choice == JOptionPane.YES_OPTION) {
+            // 1. ลบจาก Classroom Memory
             if (classroom.removeBooking(bookingToEdit)) {
-                JOptionPane.showMessageDialog(this, "Booking successfully deleted.", "Success", JOptionPane.INFORMATION_MESSAGE);
 
+                reservationSystem.removeBookingInternal(bookingToEdit);
+                // 2. 🟢 FIX 5: ลบจาก CSV และ System Memory ด้วย
+                dataManager.deleteBooking(teacher, bookingToEdit.getReservationID());
+
+
+                JOptionPane.showMessageDialog(this, "✅ Booking successfully deleted.", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                // Refresh the main schedule and go back
                 reservationUI.refreshSchedule();
                 reservationUI.setVisible(true);
                 this.dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "Error: Could not delete booking.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "❌ Error: Could not delete booking from classroom list.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
