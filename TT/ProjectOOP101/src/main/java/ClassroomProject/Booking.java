@@ -10,22 +10,17 @@ public class Booking {
     private TimeSlot timeSlot;
     private String reservationID;  // 🔹 รหัสการจองเฉพาะแต่ละครั้ง
     private String room;
+    private ReservationType type;
 
-    public Booking(Teacher teacher, LocalDate date, TimeSlot timeSlot, String course, String code) {
-        this.teacher = teacher;
-        this.date = date;
-        this.timeSlot = timeSlot;
-        this.course = course;
-        this.code = code;
-    }
-    public Booking(Teacher teacher, LocalDate date, TimeSlot timeSlot, String course, String code, String room) {
+    public Booking(Teacher teacher, LocalDate date, TimeSlot timeSlot, String course, String code, String room,String reservationID, ReservationType type) {
         this.teacher = teacher;
         this.date = date;
         this.timeSlot = timeSlot;
         this.course = course;
         this.code = code;
         this.room = room;
-        this.reservationID = "R" + System.currentTimeMillis();
+        this.reservationID = reservationID;
+        this.type = type;
     }
 
     public Teacher getTeacher() { return teacher; }
@@ -35,6 +30,7 @@ public class Booking {
     public String getCode() { return code; }
     public String getReservationID() { return reservationID; }
     public String getRoom() { return room; }
+    public ReservationType getType() { return type; }
 
     @Override
     public String toString() {
